@@ -155,12 +155,15 @@ class NetworkBase(nn.Module, VariableSource, Saveable):
         """
 
     def forward(self, state, action):
-        pass
+        distribution = self.policy.distribution(state)
+        log_prob = self._log_prob(distribution, action)
+        baseline = self.baseline(state)
+        return log_prob, baseline
 
     @abc.abstractmethod
     def cuda(self):
-        """Set network device to cuda
-        """
+        self.policy.cuda(self.config.device_num)
+        self.baseline.cuda(self.config.device_num)
 
     def save(self, checkpoint_path: str):
         torch.save(self.state_dict(), "{}/network.th".format(checkpoint_path))

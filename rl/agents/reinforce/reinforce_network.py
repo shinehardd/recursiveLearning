@@ -4,6 +4,7 @@ from rl.utils.logging import Logger
 from rl.envs.environment import EnvironmentSpec
 from rl.networks.network import GaussianMLPPolicy, CategoricalMLPPolicy
 from rl.agents.base import NetworkBase
+from rl.networks.network import MLP
 
 
 class REINFORCENetwork(NetworkBase):
@@ -24,6 +25,8 @@ class REINFORCENetwork(NetworkBase):
 
         self.policy = self.make_policy()
 
+        self.baseline = self.make_baseline()
+
     def make_policy(self):
 
         hidden_dim = self.config.actor_hidden_dims
@@ -42,6 +45,7 @@ class REINFORCENetwork(NetworkBase):
 
     def cuda(self):
         self.policy.cuda(self.config.device_num)
+        self.baseline.cuda(self.config.device_num)
 
     def _log_prob(self, distribution, action):
         # change to 1 dimension (safe log probability calculation)
@@ -74,4 +78,9 @@ class REINFORCENetwork(NetworkBase):
         if b_action_squeeze:
             log_prob = log_prob.unsqueeze(-1)
 
-        return log_prob
+        baseline = self.baseline(state)
+        return log_prob,baseline
+
+    def make_baseline(self):
+        layer_dims = self.config.actor_hidden_dims + [1]
+        return MLP(self.config, self.state_dim, layer_dims)

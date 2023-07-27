@@ -1,7 +1,8 @@
 import torch
+from torch import nn
 from types import SimpleNamespace
-
 from rl.datasets.rollout_buffer import RolloutBuffer
+
 from rl.agents.reinforce.reinforce_network import REINFORCENetwork
 from rl.envs.environment import EnvironmentSpec
 from rl.utils.logging import Logger
@@ -25,8 +26,11 @@ class REINFORCELearner(Learner):
         self.buffer = buffer
         self.network = network
 
+        self.baseline = self.network.baseline
+
         self.optimizer = torch.optim.Adam([
                         {'params': self.network.policy.parameters(), 'lr': self.config.lr_policy},
+                        {'params': self.network.baseline.parameters(), 'lr': self.config.lr_policy},
                     ])
 
         if self.config.lr_annealing:
@@ -36,6 +40,15 @@ class REINFORCELearner(Learner):
                                                 end_timesteps=self.config.max_environment_steps,
                                                 name="policy lr"
                                                 )
+
+            self.baseline_lr_scheduler = CosineLR(logger=self.logger,
+                                                  param_groups=self.optimizer.param_groups[1],
+                                                  start_lr=self.config.lr_policy,
+                                                  end_timesteps=self.config.max_environment_steps,
+                                                  name="policy lr"
+                                                  )
+
+            self.MSELoss = nn.MSELoss()
 
         self.learner_step = 0
 
@@ -52,11 +65,18 @@ class REINFORCELearner(Learner):
             self.buffer['done'],
         )
 
+        with torch.no_grad():
+            baseline = self.baseline(self.buffer['state'])
+            advantage = returns - baseline
+
         if self.buffer["returns"] is None:
-            scheme = {'returns': {'shape': (1,)},}
+            scheme = {'returns': {'shape': (1,)},
+                      'advantage': {'shape': (1,)},
+                      }
             self.buffer.extend_scheme(scheme)
 
         self.buffer['returns'] = returns
+        self.buffer['advantage'] = advantage
 
     def update(self, total_n_timesteps: int, total_n_episodes: int):
 
@@ -75,18 +95,24 @@ class REINFORCELearner(Learner):
                 state = sample_batched["state"]
                 action = sample_batched["action"]
                 returns = sample_batched["returns"]
+                advantage = sample_batched["advantage"]
 
                 self.learner_step += 1
 
                 # Evaluating old actions and values
-                log_probs = self.network(state, action)
+                log_probs, baseline = self.network(state, action)
+
+                # baseline loss
+                baseline_loss = self.MSELoss(baseline, returns)
 
                 # policy loss
-                policy_loss = -(log_probs * returns).mean()# your code
+                policy_loss = -(log_probs * advantage).mean()
+
+                total_loss = baseline_loss + policy_loss
 
                 # take gradient step
                 self.optimizer.zero_grad(set_to_none=True)
-                policy_loss.backward()
+                total_loss.backward()
                 torch.nn.utils.clip_grad_norm_(
                     self.network.parameters(), self.config.grad_norm_clip
                 )
@@ -94,10 +120,13 @@ class REINFORCELearner(Learner):
 
                 # Performance Logging
                 self.logger.log_stat("policy_loss", policy_loss.item(), self.learner_step)
+                self.logger.log_stat("baseline_loss", policy_loss.item(), self.learner_step)
 
         if self.config.lr_annealing:
             self.policy_lr_scheduler.step(total_n_timesteps)
+            self.baseline_lr_scheduler.step(total_n_timesteps)
             self.logger.log_stat("policy learning rate", self.optimizer.param_groups[0]['lr'], total_n_timesteps)
+            self.logger.log_stat("baseline learning rate", self.optimizer.param_groups[1]['lr'], total_n_timesteps)
 
         # clear buffer
         self.buffer.clear()
