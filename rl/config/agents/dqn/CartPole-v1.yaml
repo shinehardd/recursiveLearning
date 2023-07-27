@@ -1,0 +1,76 @@
+# https://huggingface.co/sb3/dqn-CartPole-v1
+################### Common Part
+# --- GPU  ---
+use_cuda: True # Use gpu by default unless it isn't available
+device_num: 0 # CUDA device number
+
+# Etc
+epsilon: 0.0000001
+
+# Optimizer
+optim_betas : [0.9, 0.999] # Adam alpha -> beta1, beta2
+optim_eps: 0.00001 # Adam epsilon
+torch_deterministic: True
+
+# Environment
+env_wrapper: 'opengym'
+env_name: 'CartPole-v1'
+n_envs: 1
+
+# Rendering
+render: False
+
+# Inference
+training_mode : True
+trained_model_path: ""
+test_mode_max_episodes: 100         # maximum number of episodes
+
+# Logging options
+log_interval: 1000 # Log summary of stats after every {} time steps
+use_tensorboard: True # Log results to tensorboard
+
+# Checkpoint
+save_model: True # Save the models to disk
+save_model_interval: 10000 # Save models after this many steps
+checkpoint_path: ""
+load_step: 0 # Load model trained on this many timesteps (0 if choose max possible)
+local_results_path: "results" # Path for local results
+
+################### Training Part
+# Training Steps
+max_environment_steps: 100000          # maximum environment steps
+n_steps: 128
+n_episodes: 0
+n_epochs: 0 #  update policy for n epochs in one leaner update
+gradient_steps: 64
+batch_size: 64 # Number of samples to train
+
+# Learning Rate
+lr_critic:  0.0005      # learning rate for critic network
+
+# Target Update
+target_update_type: "soft"    # {hard, soft}
+target_update_interval: 500   # time step interval for hard update
+tau: 0.005                    # target update weight for soft update
+
+# Learning Rate Annealing
+lr_annealing: True
+
+# Epsilon greedy
+epsilon_greedy: True  # discrete
+epsilon_start: 0.1
+epsilon_finish: 0.01
+epsilon_anneal_time: 70000
+
+# Replay Buffer
+warmup_step: 1000 # 25000
+replay_buffer_size: 10000 # 100000
+
+# Gradient Clipping
+grad_norm_clip: 0.3 # Reduce magnitude of gradients above this L2 norm
+
+# discount factor
+gamma: 0.99            # discount factor
+
+# Network Hidden dims
+critic_hidden_dims: [256, 256]

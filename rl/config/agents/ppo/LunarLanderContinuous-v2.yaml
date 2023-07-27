@@ -1,0 +1,84 @@
+################### Common Part
+# https://wandb.ai/takuyamagata/RLRG_AC/reports/Proximal-Policy-Optimization-PPO-on-OpenAI-Gym--VmlldzoxMTY2ODU
+# https://huggingface.co/sb3/ppo-LunarLanderContinuous-v2
+# --- GPU  ---
+use_cuda: True # Use gpu by default unless it isn't available
+device_num: 0 # CUDA device number
+
+# Etc
+epsilon: 0.0000001
+
+# Optimizer
+optim_betas : [0.9, 0.999] # Adam alpha -> beta1, beta2
+optim_eps: 0.00001 # Adam epsilon
+torch_deterministic: True
+
+# Environment
+env_wrapper: 'opengym'
+env_name: 'LunarLanderContinuous-v2'
+n_envs: 1
+
+# Rendering
+render: False
+
+# Inference
+training_mode : True
+# trained_model_path: "E:\\workspace\\RL_Education\\results\\models\\ppo_LunarLanderContinuous-v2_2023-07-26_23-39-06\\1007616\\network.th"
+trained_model_path: ""
+test_mode_max_episodes: 100         # maximum number of episodes
+
+# Logging options
+log_interval: 2000 # Log summary of stats after every {} time steps
+use_tensorboard: True # Log results to tensorboard
+
+# Checkpoint
+save_model: True # Save the models to disk
+save_model_interval: 20000 # Save models after this many steps
+checkpoint_path: ""
+load_step: 0 # Load model trained on this many timesteps (0 if choose max possible)
+local_results_path: "results" # Path for local results
+
+################### Training Part
+# Training Steps
+max_environment_steps: 1000000          # maximum environment steps
+n_steps: 8192   #16384, 8192, 4096
+n_episodes: 0
+n_epochs: 10 #  update policy for n epochs in one leaner update
+batch_size: 64 # Number of samples to train
+
+# Learning Rate
+lr_policy: 0.00002       # learning rate for actor network
+lr_critic: 0.0001        # learning rate for critic network
+
+# Learning Rate Annealing
+lr_annealing: True
+
+# Warming Up step
+warmup_step: 0
+
+# Epsilon greedy noise
+epsilon_greedy: False
+
+# Gradient Clipping
+grad_norm_clip: 0.5 # Reduce magnitude of gradients above this L2 norm
+
+# PPO Clipping
+ppo_clipping_epsilon: 0.2          # clip parameter for PPO
+clip_schedule: True
+
+# discount factor
+gamma: 0.999            # discount factor
+
+# GAE
+advantage_type: 'gae'
+return_standardization: True
+gae_standardization: True
+gae_lambda: 0.98
+
+# loss
+vloss_coef: 1.0
+eloss_coef: 0.01
+
+# Network Hidden dims
+actor_hidden_dims: [64, 64, 64]
+critic_hidden_dims: [64, 64, 64]

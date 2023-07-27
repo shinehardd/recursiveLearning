@@ -1,0 +1,70 @@
+# Performance Check Done
+################### Common Part
+# --- GPU  ---
+use_cuda: True # Use gpu by default unless it isn't available
+device_num: 0 # CUDA device number
+
+# Etc
+# Used for numerical stability when performing arithmetic operations with small constants
+epsilon: 0.0000001
+
+# Optimizer
+optim_betas : [0.9, 0.999] # Adam alpha -> beta1, beta2
+optim_eps: 0.00001 # Adam epsilon
+torch_deterministic: True # Option to give the same learning result when learning PyTorch
+
+# Environment
+env_wrapper: 'opengym'  # The package type that provides the environment
+env_name: 'CartPole-v1' # In main.py, the environment name received as an argument is processed with a higher priority
+n_envs: 1 # Number of environments to create during training (currently, multiple environments are not supported)
+
+# Rendering
+render: False # Whether to display the environment on screen
+
+# Training Mode
+training_mode : True      # True in training mode, False in inference mode
+trained_model_path: ""  # Inference by reading the model in the specified file path in inference mode
+test_mode_max_episodes: 100         # maximum number of episodes
+
+# Logging options
+log_interval: 2000 # Log summary of stats after every {} time steps
+use_tensorboard: True # Log results to tensorboard
+
+# Checkpoint
+save_model: True # Save the models to disk
+save_model_interval: 20000 # Save models after this many steps
+checkpoint_path: "" # Checkpoint save path
+load_step: 0 # Load model trained on this many timesteps (0 if choose max possible)
+local_results_path: "results" # Path for local results
+
+################### Training Part
+# Training Steps
+max_environment_steps: 100000          # maximum environment steps
+n_steps: 500   # Environment steps to run to collect training data
+n_episodes: 0   # Number of episodes to run to collect training data
+n_epochs: 1         #  update policy for n epochs in one leaner update
+batch_size: 18 # Number of samples to train
+
+# Learning Rate
+lr_policy: 0.0003       # learning rate for actor network
+
+# Learning Rate Annealing
+lr_annealing: True
+
+# Warming Up step
+warmup_step: 0  # The number of steps to fill the buffer without learning the policy when the Replay Buffer is empty
+
+# Epsilon greedy noise
+epsilon_greedy: False  # Noise added to action selection for exploration when using Deterministic Policy
+
+# Gradient Clipping
+grad_norm_clip: 0.3 # Reduce magnitude of gradients above this L2 norm
+
+# discount factor
+gamma: 0.99            # discount factor
+
+# Return and Advantage
+return_standardization: True
+
+# Network Hidden dims
+actor_hidden_dims: [512]
